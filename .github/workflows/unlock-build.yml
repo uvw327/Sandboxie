@@ -75,6 +75,9 @@ jobs:
       - name: Build Sandboxie-Tools x64
         run: msbuild /t:build SandboxieTools\SandboxieTools.sln /p:Configuration="Release" /p:Platform=x64 -maxcpucount:8
 
+      - name: Build SbieUnlockTest x64
+        run: msbuild SandboxieTools\SbieUnlockTest\SbieUnlockTest.vcxproj /p:Configuration=Release /p:Platform=x64
+
       #
       # Merge
       #
@@ -128,6 +131,7 @@ jobs:
           copy /y Installer\unlock\testsign-uninstall.cmd Installer\SbiePlus_x64\
           copy /y Installer\unlock\README.txt Installer\SbiePlus_x64\
           copy /y sbie-test.cer Installer\SbiePlus_x64\
+          copy /y SandboxieTools\SbieUnlockTest\bin\x64\Release\SbieUnlockTest.exe Installer\SbiePlus_x64\
 
       - name: Verify signed driver
         shell: pwsh
