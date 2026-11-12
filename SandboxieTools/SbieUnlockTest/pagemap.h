@@ -474,6 +474,7 @@ static int kdrv_page_write(kdrv_t *d, ULONG64 va, const void *data, ULONG size)
     ULONG64 alias_va = (ULONG64)(ULONG_PTR)alias;
     ULONG64 alias_pte_va = kdrv_pte_va(pte_base, alias_va);
     ULONG64 saved_pte = 0;
+    ULONG64 alias_pte = 0;
     int rc = 0;
     BOOL restored = TRUE;
 
@@ -483,7 +484,7 @@ static int kdrv_page_write(kdrv_t *d, ULONG64 va, const void *data, ULONG size)
         goto out;
     }
 
-    ULONG64 alias_pte = kdrv_alias_pte(target_pte);
+    alias_pte = kdrv_alias_pte(target_pte);
     if (kdrv_write(d, alias_pte_va, &alias_pte, sizeof(alias_pte)) != 0) {
         LOGE("kdrv_page_write: alias PTE write failed at 0x%llX", alias_pte_va);
         rc = 7;
