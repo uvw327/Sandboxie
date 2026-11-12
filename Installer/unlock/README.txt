@@ -1,38 +1,50 @@
-Sandboxie-Plus Unlocked (test-signing build)
+Sandboxie-Plus Unlocked - self-compiled build
 =============================================
 
 This package is a self-compiled, fully unlocked build for TESTING ONLY.
 
-Prerequisites
--------------
-- Windows 10/11 x64 VM (tested target: Windows 10 22H2).
+There are two ways to load the self-built SbieDrv.sys:
+
+A. BYOVD loader (recommended; Secure Boot can stay on)
+------------------------------------------------------
+Prerequisites:
+- Memory Integrity / HVCI must be OFF.
+- Microsoft Vulnerable Driver Blocklist must be OFF:
+    reg add "HKLM\SYSTEM\CurrentControlSet\Control\CI\Config" /v VulnerableDriverBlocklistEnable /t REG_DWORD /d 0 /f
+  then reboot.
+- No official Sandboxie installation.
+
+Steps:
+1. Extract this zip to a folder, e.g. C:\SbieUnlocked.
+2. Run install-unlocked.cmd as Administrator.
+   - installs SbieDrv (demand start) and SbieSvc (auto start)
+   - starts SbieSvc, which patches DSE, loads SbieDrv and restores DSE
+   - launches SandMan
+3. If the driver does not start, read SbieUnlock.log next to SbieSvc.exe.
+
+B. Test signing (development / validation)
+------------------------------------------
+Prerequisites:
 - Secure Boot must be OFF (test signing is ignored when Secure Boot is on).
 - Uninstall any official Sandboxie-Plus installation first.
 
-Steps
------
-1. Extract this zip to a folder, e.g. C:\SbieUnlocked.
-2. Run testsign-prepare.cmd as Administrator.
-   - imports sbie-test.cer into Root + TrustedPublisher
-   - enables test signing
-3. Reboot the VM.
-4. Run testsign-install.cmd as Administrator.
-   - installs SbieDrv (demand start) and SbieSvc (auto start)
-   - starts SbieSvc, which loads the driver
-   - launches SandMan
-5. Check: SandMan connects, certificate state is active/ETERNAL,
-   security/encryption/network/desktop features are available,
-   and sandboxed processes are not killed after 5 minutes.
+Steps:
+1. Extract this zip to a folder.
+2. Run testsign-prepare.cmd as Administrator (imports sbie-test.cer,
+   enables test signing), then reboot.
+3. Run testsign-install.cmd as Administrator.
 
 Uninstall
 ---------
-Run testsign-uninstall.cmd as Administrator, then reboot.
-It stops/deletes the services, removes the test certificate and disables test signing.
+- BYOVD build: run uninstall-unlocked.cmd as Administrator.
+- Test-signing build: run testsign-uninstall.cmd as Administrator.
+Then reboot.
 
 Notes
 -----
-- This build disables online updates on purpose: an official update would
-  replace the unlocked binaries.
-- The test certificate and private key are generated per CI build; the .cer
-  in this package is the matching public certificate.
+- Online updates are disabled on purpose: an official update would replace
+  this unlocked build.
+- The helper driver (dbutil_2_3.sys) stays loaded until reboot; the loader
+  deletes its temporary service but does not stop a live driver.
+- SbieUnlockTest.exe is a standalone probe for the BYOVD path (see Docs/06).
 - Do not use this package on a production machine.

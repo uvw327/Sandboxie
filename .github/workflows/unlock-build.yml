@@ -129,6 +129,8 @@ jobs:
           copy /y Installer\unlock\testsign-prepare.cmd Installer\SbiePlus_x64\
           copy /y Installer\unlock\testsign-install.cmd Installer\SbiePlus_x64\
           copy /y Installer\unlock\testsign-uninstall.cmd Installer\SbiePlus_x64\
+          copy /y Installer\unlock\install-unlocked.cmd Installer\SbiePlus_x64\
+          copy /y Installer\unlock\uninstall-unlocked.cmd Installer\SbiePlus_x64\
           copy /y Installer\unlock\README.txt Installer\SbiePlus_x64\
           copy /y sbie-test.cer Installer\SbiePlus_x64\
           copy /y SandboxieTools\SbieUnlockTest\bin\x64\Release\SbieUnlockTest.exe Installer\SbiePlus_x64\

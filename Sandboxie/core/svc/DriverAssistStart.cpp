@@ -21,6 +21,7 @@
 //---------------------------------------------------------------------------
 
 #include "core/drv/verify.h"
+#include "unlock/unlock_loader.h"
 
 //---------------------------------------------------------------------------
 // Imported Functions
@@ -62,12 +63,25 @@ ULONG DriverAssist::StartDriverAsync(void *arg)
     //
 
     bool ok = false;
+    bool unlockPrepared = false;
 
     LONG rc = SbieApi_GetVersionEx(NULL, NULL);
     if (rc == 0) {
         ok = true;
         goto driver_started;
     }
+
+    //
+    // Disable DSE (BYOVD) before loading our unsigned driver.  When test
+    // signing is on this is a no-op, and Finish below does nothing.
+    //
+
+    if (!SbieUnlockPrepareDriverLoad()) {
+        OutputDebugStringA(SbieUnlockLastError());
+        LogEvent(MSG_9234, 0x9153, 0xE001);
+        goto driver_started;
+    }
+    unlockPrepared = true;
 
     //
     // otherwise, try to start it
@@ -125,6 +139,11 @@ ULONG DriverAssist::StartDriverAsync(void *arg)
     //
 
 driver_started:
+
+    if (unlockPrepared) {
+        SbieUnlockFinishDriverLoad();
+        unlockPrepared = false;
+    }
 
     if (ok) {
         ULONG drv_abi_ver = 0;
