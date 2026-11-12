@@ -92,6 +92,52 @@ jobs:
         run: Installer\copy_build.cmd x64 build_qt6
 
       #
+      # Test signing (Phase 2: testsigning validation)
+      #
+
+      - name: Create test signing certificate
+        shell: pwsh
+        run: |
+          $subject = "CN=Sandboxie-Plus Unlocked Test"
+          $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject $subject `
+            -KeyUsage DigitalSignature -FriendlyName "SbieUnlockTest" `
+            -CertStoreLocation "Cert:\CurrentUser\My" -NotAfter (Get-Date).AddYears(10)
+          $pwdPlain = "SbieTest123"
+          $pwd = ConvertTo-SecureString -String $pwdPlain -Force -AsPlainText
+          Export-PfxCertificate -Cert $cert -FilePath "sbie-test.pfx" -Password $pwd | Out-Null
+          Export-Certificate -Cert $cert -FilePath "sbie-test.cer" | Out-Null
+          "SBIE_TEST_PFX_PWD=$pwdPlain" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw "signtool.exe not found" }
+          "SIGNTOOL=$($signtool.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "Signing certificate: $($cert.Subject) thumbprint=$($cert.Thumbprint)"
+
+      - name: Sign SbieDrv.sys for test signing
+        shell: cmd
+        run: |
+          "%SIGNTOOL%" sign /fd SHA256 /f sbie-test.pfx /p %SBIE_TEST_PFX_PWD% Installer\SbiePlus_x64\SbieDrv.sys
+          if errorlevel 1 exit /b 1
+          dir Installer\SbiePlus_x64\SbieDrv.sys
+
+      - name: Add test signing helper files
+        shell: cmd
+        run: |
+          copy /y Installer\unlock\testsign-prepare.cmd Installer\SbiePlus_x64\
+          copy /y Installer\unlock\testsign-install.cmd Installer\SbiePlus_x64\
+          copy /y Installer\unlock\testsign-uninstall.cmd Installer\SbiePlus_x64\
+          copy /y Installer\unlock\README.txt Installer\SbiePlus_x64\
+          copy /y sbie-test.cer Installer\SbiePlus_x64\
+
+      - name: Verify signed driver
+        shell: pwsh
+        run: |
+          $sig = Get-AuthenticodeSignature Installer\SbiePlus_x64\SbieDrv.sys
+          "Signature status (self-signed, not trusted on runner is expected): $($sig.Status)"
+          "Signer: $($sig.SignerCertificate.Subject)"
+          if (-not $sig.SignerCertificate) { throw "SbieDrv.sys has no signature" }
+
+      #
       # Package
       #
 

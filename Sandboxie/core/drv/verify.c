@@ -18,6 +18,7 @@
 
 #include "driver.h"
 #include "util.h"
+#include "common/unlock_config.h"
 
 NTSTATUS NTAPI ZwQueryInstallUILanguage(LANGID* LanguageId);
 
@@ -565,7 +566,28 @@ _FX NTSTATUS KphValidateCertificate()
     BOOLEAN node_lock = FALSE;
     BOOLEAN node_pass = FALSE;
 
+#ifdef SBIE_UNLOCKED
+
+    //
+    // Unlocked build: report a permanent, fully featured certificate.
+    // Certificate.dat is neither read nor verified.
+    //
+
+    Verify_CertInfo.State = 0;
+    Verify_CertInfo.active = 1;
+    Verify_CertInfo.type = eCertEternal;
+    Verify_CertInfo.level = eCertMaxLevel;
+    Verify_CertInfo.opt_desk = 1;
+    Verify_CertInfo.opt_net = 1;
+    Verify_CertInfo.opt_enc = 1;
+    Verify_CertInfo.opt_sec = 1;
+    return STATUS_SUCCESS;
+
+#else
+
     Verify_CertInfo.State = 0; // clear
+
+#endif
 
     if(!NT_SUCCESS(status = MyInitHash(&hashObj)))
         goto CleanupExit;

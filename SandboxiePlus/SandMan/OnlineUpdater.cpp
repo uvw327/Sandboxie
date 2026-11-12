@@ -10,6 +10,7 @@
 #include "../MiscHelpers/Common/CheckableMessageBox.h"
 #include <QMessageBox>
 #include "../../SandboxieTools/UpdUtil/UpdUtil.h"
+#include "../../Sandboxie/common/unlock_config.h"
 #include <QCryptographicHash>
 #include "Helpers/WinAdmin.h"
 #include <windows.h>
@@ -495,7 +496,15 @@ bool COnlineUpdater::ShowCertWarningIfNeeded()
 
 void COnlineUpdater::Process() 
 {
-	int UpdateInterval = theConf->GetInt("Options/UpdateInterval", UPDATE_INTERVAL); // in seconds
+#ifdef SBIE_UNLOCKED
+    //
+    // Unlocked build: never check for or apply official updates. An official
+    // update would replace the unlocked binaries and break the build.
+    //
+    return;
+#endif
+
+    int UpdateInterval = theConf->GetInt("Options/UpdateInterval", UPDATE_INTERVAL); // in seconds
 	QDateTime CurretnDate = QDateTime::currentDateTime();
 	time_t NextUpdateCheck = theConf->GetUInt64("Options/NextCheckForUpdates", 0);
 	if (NextUpdateCheck == 0 || NextUpdateCheck > CurretnDate.addDays(31).toSecsSinceEpoch()) { // no check made yet or invalid value
@@ -571,8 +580,13 @@ void COnlineUpdater::Process()
 
 void COnlineUpdater::CheckForUpdates(bool bManual)
 {
-	if (m_CheckMode == eManual || m_CheckMode == eAuto)
-		return; // already in progress
+#ifdef SBIE_UNLOCKED
+    (void)bManual;
+    return; // updates are disabled in the unlocked build
+#endif
+
+    if (m_CheckMode == eManual || m_CheckMode == eAuto)
+        return; // already in progress
 
 #ifdef _DEBUG
 	if (QApplication::keyboardModifiers() & Qt::ControlModifier)

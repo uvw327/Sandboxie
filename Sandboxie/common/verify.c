@@ -30,6 +30,7 @@ typedef long NTSTATUS;
 #include <fileapi.h>
 
 #include "..\..\Sandboxie\common\win32_ntddk.h"
+#include "unlock_config.h"
 
 
 
@@ -262,6 +263,13 @@ CleanupExit:
 
 NTSTATUS VerifyFileSignature(const wchar_t* FilePath)
 {
+#ifdef SBIE_UNLOCKED
+
+    UNREFERENCED_PARAMETER(FilePath);
+    return STATUS_SUCCESS;
+
+#else
+
     NTSTATUS status;
     ULONG hashSize;
     PVOID hash = NULL;
@@ -305,5 +313,7 @@ CleanupExit:
         free(signatureFileName);
 
     return status;
+
+#endif
 }
 

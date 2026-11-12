@@ -24,6 +24,7 @@
 #include "util.h"
 #include "process.h"
 #include "common/my_version.h"
+#include "common/unlock_config.h"
 #define KERNEL_MODE
 #include "verify.h"
 
@@ -527,6 +528,18 @@ _FX BOOLEAN MyIsTestSigning(void)
 
 _FX BOOLEAN MyIsCallerSigned(void)
 {
+#ifdef SBIE_UNLOCKED
+
+    //
+    // Unlocked build: our user-mode binaries are self-built and carry no
+    // vendor .sig files. The SbieSvc service and SandMan must be able to
+    // register with and manage the driver, so accept all unsandboxed callers.
+    //
+
+    return TRUE;
+
+#else
+
     NTSTATUS status;
 
     // in test signing mode don't verify the signature
@@ -549,6 +562,8 @@ _FX BOOLEAN MyIsCallerSigned(void)
     }
 
     return TRUE;
+
+#endif
 }
 
 
